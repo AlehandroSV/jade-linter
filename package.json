@@ -1,6 +1,6 @@
 {
   "name": "jade-linter",
-  "displayName": "Jade",
+  "displayName": "Jade Linter",
   "description": "Linter and IDE support for Jade ORM schema files",
   "version": "0.1.0",
   "publisher": "AlehandroSV",
@@ -22,9 +22,6 @@
     "lua",
     "schema",
     "linter"
-  ],
-  "activationEvents": [
-    "onLanguage:lua"
   ],
   "main": "./out/extension.js",
   "contributes": {
