@@ -4,6 +4,11 @@
   "description": "Linter and IDE support for Jade ORM schema files",
   "version": "0.1.0",
   "publisher": "AlehandroSV",
+  "icon": "assets/jade-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlehandroSV/jade-linter"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
