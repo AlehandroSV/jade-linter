@@ -1,113 +1,103 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Gradiente principal da gema -->
+    <!-- Background gradient - dark elegant -->
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d0d15;stop-opacity:1" />
+    </radialGradient>
+
+    <!-- Jade stone gradient - natural gem look -->
     <linearGradient id="jadeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#00cc6a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00994f;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#2d8a4e;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#1a6b35;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#0f5c2a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a4a20;stop-opacity:1" />
     </linearGradient>
 
-    <!-- Brilho da gema -->
-    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#66ffbb;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:0.2" />
+    <!-- Inner glow -->
+    <radialGradient id="innerGlow" cx="30%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.6" />
+      <stop offset="50%" style="stop-color:#22c55e;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:0" />
+    </radialGradient>
+
+    <!-- Highlight -->
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="50%" y2="50%">
+      <stop offset="0%" style="stop-color:#86efac;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#22c55e;stop-opacity:0" />
     </linearGradient>
 
-    <!-- Raio elétrico -->
-    <linearGradient id="lightningGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#00ffff;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00ffff;stop-opacity:1" />
-    </linearGradient>
+    <!-- Subtle shadow -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
 
-    <!-- Glow effect -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+    <!-- Gem inner shadow -->
+    <filter id="innerShadow">
+      <feOffset dx="0" dy="4"/>
+      <feGaussianBlur stdDeviation="4"/>
+      <feComposite operator="out" in="SourceGraphic"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feComposite operator="over" in2="SourceGraphic"/>
+    </filter>
+
+    <!-- Subtle glow -->
+    <filter id="subtleGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feMerge>
-        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <!-- Shadow -->
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.5"/>
-    </filter>
   </defs>
 
-  <!-- Background circular -->
-  <circle cx="256" cy="256" r="240" fill="#1a1a2e" filter="url(#shadow)"/>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)"/>
 
-  <!-- Outer ring - rock style -->
-  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#lightningGradient)" stroke-width="8" opacity="0.6"/>
+  <!-- Subtle outer ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.2"/>
 
-  <!-- Lightning bolts - rock energy -->
-  <g filter="url(#glow)">
-    <!-- Left lightning -->
-    <path d="M120 180 L160 220 L140 220 L180 280 L150 280 L200 350" 
-          fill="none" stroke="#00ffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    <!-- Right lightning -->
-    <path d="M392 180 L352 220 L372 220 L332 280 L362 280 L312 350" 
-          fill="none" stroke="#00ffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-
-  <!-- Main gem shape - hexagonal jade -->
-  <g filter="url(#glow)">
-    <!-- Gem base -->
-    <polygon points="256,80 380,160 380,320 256,400 132,320 132,160" 
-             fill="url(#jadeGradient)" stroke="#00ff88" stroke-width="4"/>
+  <!-- Main gem - elegant hexagonal shape -->
+  <g filter="url(#softShadow)">
+    <!-- Gem body -->
+    <polygon points="256,100 370,170 370,310 256,380 142,310 142,170" 
+             fill="url(#jadeGradient)"/>
     
-    <!-- Gem facets -->
-    <polygon points="256,80 320,140 256,200 192,140" 
-             fill="url(#glowGradient)" opacity="0.6"/>
-    <polygon points="380,160 340,200 380,320" 
-             fill="#00994f" opacity="0.4"/>
-    <polygon points="132,160 172,200 132,320" 
-             fill="#00994f" opacity="0.4"/>
+    <!-- Top facet -->
+    <polygon points="256,100 310,140 256,180 202,140" 
+             fill="url(#highlight)" opacity="0.5"/>
     
-    <!-- Gem center highlight -->
-    <ellipse cx="256" cy="220" rx="60" ry="40" fill="#66ffbb" opacity="0.4"/>
+    <!-- Left facet shadow -->
+    <polygon points="142,170 202,140 202,260 142,310" 
+             fill="#0a4a20" opacity="0.3"/>
+    
+    <!-- Right facet highlight -->
+    <polygon points="370,170 310,140 310,260 370,310" 
+             fill="#2d8a4e" opacity="0.2"/>
+    
+    <!-- Inner glow overlay -->
+    <ellipse cx="256" cy="240" rx="80" ry="60" fill="url(#innerGlow)"/>
   </g>
 
-  <!-- Electric sparks -->
-  <g filter="url(#glow)">
-    <circle cx="180" cy="150" r="4" fill="#00ffff"/>
-    <circle cx="332" cy="150" r="4" fill="#00ffff"/>
-    <circle cx="150" cy="300" r="3" fill="#00ffff"/>
-    <circle cx="362" cy="300" r="3" fill="#00ffff"/>
-    <circle cx="256" cy="100" r="5" fill="#66ffbb"/>
-    <circle cx="256" cy="380" r="5" fill="#66ffbb"/>
-  </g>
+  <!-- Top highlight reflection -->
+  <ellipse cx="230" cy="160" rx="40" ry="20" fill="#86efac" opacity="0.4" transform="rotate(-20 230 160)"/>
 
-  <!-- Sound waves - rock vibe -->
-  <g opacity="0.5">
-    <path d="M100 256 Q120 230 140 256 Q160 282 180 256" 
-          fill="none" stroke="#00ff88" stroke-width="3" stroke-linecap="round"/>
-    <path d="M332 256 Q352 230 372 256 Q392 282 412 256" 
-          fill="none" stroke="#00ff88" stroke-width="3" stroke-linecap="round"/>
-  </g>
+  <!-- Small sparkle top right -->
+  <circle cx="320" cy="140" r="3" fill="#ffffff" opacity="0.8"/>
+  <circle cx="320" cy="140" r="6" fill="#ffffff" opacity="0.2"/>
 
-  <!-- Center text "J" for Jade -->
-  <text x="256" y="270" 
-        font-family="Arial Black, sans-serif" 
-        font-size="120" 
-        font-weight="900"
+  <!-- Tiny sparkle bottom left -->
+  <circle cx="180" cy="280" r="2" fill="#ffffff" opacity="0.6"/>
+
+  <!-- Letter J - clean and modern -->
+  <text x="256" y="268" 
+        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
+        font-size="100" 
+        font-weight="300"
         fill="#ffffff" 
-        text-anchor="middle" 
-        filter="url(#glow)"
-        style="text-shadow: 0 0 20px #00ff88">J</text>
-
-  <!-- Decorative dots around gem -->
-  <g fill="#00ff88" opacity="0.6">
-    <circle cx="256" cy="60" r="6"/>
-    <circle cx="180" cy="100" r="4"/>
-    <circle cx="332" cy="100" r="4"/>
-    <circle cx="120" cy="200" r="4"/>
-    <circle cx="392" cy="200" r="4"/>
-    <circle cx="120" cy="320" r="4"/>
-    <circle cx="392" cy="320" r="4"/>
-    <circle cx="180" cy="400" r="4"/>
-    <circle cx="332" cy="400" r="4"/>
-    <circle cx="256" cy="440" r="6"/>
-  </g>
+        text-anchor="middle"
+        opacity="0.95"
+        filter="url(#subtleGlow)">J</text>
 </svg>
