@@ -1,0 +1,120 @@
+{
+  "name": "Jade Schema",
+  "scopeName": "source.lua.jade",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#modifiers"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#relations"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(local|return|function|end|if|then|else|elseif|for|while|do|repeat|until|break|nil|true|false|and|or|not)\\b",
+          "name": "keyword.control.lua"
+        },
+        {
+          "match": "\\b(require|dofile|loadfile|pcall|xpcall|assert|error|ipairs|pairs|print|tostring|tonumber|type|select|unpack)\\b",
+          "name": "support.function.lua"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "match": "\\b(Integer|String|Text|Boolean|Timestamp|Date|UUID|CUID|NanoID|Float|Decimal)\\b",
+          "name": "support.type.primitive.jade"
+        },
+        {
+          "match": "\\b(Schema|Entity)\\b",
+          "name": "support.type.class.jade"
+        }
+      ]
+    },
+    "modifiers": {
+      "patterns": [
+        {
+          "match": "(\\?|!)",
+          "name": "keyword.operator.modifier.jade"
+        },
+        {
+          "match": ":(primaryKey|autoIncrement|notNull|unique|default|foreignKey|nullable|inValues|defaultNow)\\b",
+          "name": "support.type.modifier.jade"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.lua",
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.lua"
+            }
+          ]
+        },
+        {
+          "begin": "'",
+          "end": "'",
+          "name": "string.quoted.single.lua",
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.lua"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "match": "\\b[0-9]+(\\.[0-9]+)?\\b",
+          "name": "constant.numeric.lua"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "match": "--.*$",
+          "name": "comment.line.double-dash.lua"
+        },
+        {
+          "begin": "--\\[\\[",
+          "end": "\\]\\]",
+          "name": "comment.block.lua"
+        }
+      ]
+    },
+    "relations": {
+      "patterns": [
+        {
+          "match": "\\b(belongsTo|hasMany|hasOne|hasAndBelongsToMany)\\b",
+          "name": "support.type.relation.jade"
+        }
+      ]
+    }
+  }
+}

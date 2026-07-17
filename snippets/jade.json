@@ -1,0 +1,68 @@
+{
+  "Jade Schema": {
+    "prefix": "jade-schema",
+    "body": [
+      "local jade = require(\"jade\")",
+      "",
+      "return jade.Schema({",
+      "    models = {",
+      "        ${1:ModelName} = {",
+      "            fields = {",
+      "                id = jade.Integer(),",
+      "                ${2:field} = jade.${3:String}(${4:120})${5:},",
+      "            }",
+      "        }",
+      "    }",
+      "})"
+    ],
+    "description": "Complete Jade schema structure"
+  },
+  "Jade Model": {
+    "prefix": "jade-model",
+    "body": [
+      "${1:ModelName} = {",
+      "    table = \"${2:model_names}\",",
+      "    fields = {",
+      "        id = jade.Integer(),",
+      "        ${3:field} = jade.${4:String}(${5:120})${6:},",
+      "    }",
+      "}"
+    ],
+    "description": "Jade model definition"
+  },
+  "Jade Field": {
+    "prefix": "jade-field",
+    "body": [
+      "${1:field} = jade.${2:String}(${3:120})${4:},"
+    ],
+    "description": "Jade field definition"
+  },
+  "Jade Relation": {
+    "prefix": "jade-relation",
+    "body": [
+      "{ type = \"${1:belongsTo}\", model = \"${2:ModelName}\" },"
+    ],
+    "description": "Jade relation definition"
+  },
+  "Jade Integer Field": {
+    "prefix": "jade-integer",
+    "body": [
+      "${1:field} = jade.Integer():${2:primaryKey()}${3::autoIncrement()},"
+    ],
+    "description": "Jade integer field with common modifiers"
+  },
+  "Jade String Field": {
+    "prefix": "jade-string",
+    "body": [
+      "${1:field} = jade.String(${2:120})${3:!},"
+    ],
+    "description": "Jade string field"
+  },
+  "Jade Timestamp Field": {
+    "prefix": "jade-timestamp",
+    "body": [
+      "${1:field} = jade.Timestamp():defaultNow(),"
+    ],
+    "description": "Jade timestamp field with defaultNow"
+  }
+}

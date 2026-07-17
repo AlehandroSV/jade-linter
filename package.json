@@ -1,0 +1,107 @@
+{
+  "name": "jade",
+  "displayName": "Jade",
+  "description": "Linter and IDE support for Jade ORM schema files",
+  "version": "0.1.0",
+  "publisher": "AlehandroSV",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "jade",
+    "orm",
+    "lua",
+    "schema",
+    "linter"
+  ],
+  "activationEvents": [
+    "onLanguage:lua"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "lua",
+        "aliases": [
+          "Lua",
+          "lua"
+        ],
+        "extensions": [
+          ".lua"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lua",
+        "scopeName": "source.lua.jade",
+        "path": "./syntaxes/jade.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "lua",
+        "path": "./snippets/jade.json"
+      }
+    ],
+    "configuration": {
+      "title": "Jade",
+      "properties": {
+        "jade.schema.path": {
+          "type": "string",
+          "default": "schema/init.lua",
+          "description": "Path to the Jade schema file"
+        },
+        "jade.linting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable linting for Jade schema files"
+        },
+        "jade.completion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion for Jade schema files"
+        },
+        "jade.formatting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable formatting for Jade schema files"
+        },
+        "jade.formatting.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Format Jade schema files on save"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "jade.restart",
+        "title": "Jade: Restart LSP Server"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.6",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
+  }
+}
