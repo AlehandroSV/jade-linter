@@ -7,7 +7,8 @@ import {
   TextDocumentSyncKind,
   CompletionItem,
   Hover,
-  TextEdit
+  TextEdit,
+  WorkspaceFolder
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { SchemaAnalyzer } from "./analyzer";
@@ -15,12 +16,16 @@ import { CompletionProvider } from "./completion";
 import { DiagnosticsProvider } from "./diagnostics";
 import { HoverProvider } from "./hover";
 import { FormattingProvider } from "./formatting";
+import { SchemaIndex } from "./schema-index";
 
 // Create connection
 const connection = createConnection(ProposedFeatures.all);
 
 // Create document manager
 const documents = new TextDocuments(TextDocument);
+
+// Schema index for cross-file references
+const schemaIndex = new SchemaIndex();
 
 // Providers
 let analyzer: SchemaAnalyzer;
@@ -30,8 +35,16 @@ let hoverProvider: HoverProvider;
 let formattingProvider: FormattingProvider;
 
 // Initialize
-connection.onInitialize((params: InitializeParams): InitializeResult => {
+connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
   connection.console.log("Jade LSP Server initializing...");
+
+  // Build schema index from workspace
+  if (params.workspaceFolders) {
+    for (const folder of params.workspaceFolders) {
+      const folderPath = folder.uri.replace("file:///", "").replace(/%20/g, " ");
+      await schemaIndex.buildIndex(folderPath);
+    }
+  }
 
   return {
     capabilities: {
@@ -47,6 +60,16 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 
 connection.onInitialized(() => {
   connection.console.log("Jade LSP Server initialized");
+
+  // Watch for schema file changes
+  connection.onNotification("workspace/didChangeWatchedFiles", async (params) => {
+    for (const change of params.changes) {
+      if (change.uri.endsWith(".lua")) {
+        const filePath = change.uri.replace("file:///", "").replace(/%20/g, " ");
+        await schemaIndex.indexFile(filePath);
+      }
+    }
+  });
 });
 
 // Document events
@@ -70,8 +93,8 @@ connection.onCompletion((params): CompletionItem[] => {
   const lines = content.split("\n");
   const line = lines[params.position.line] || "";
 
-  analyzer = new SchemaAnalyzer(content);
-  completionProvider = new CompletionProvider(analyzer);
+  analyzer = new SchemaAnalyzer(content, schemaIndex);
+  completionProvider = new CompletionProvider(analyzer, schemaIndex);
 
   return completionProvider.getCompletions(line, params.position.character);
 });
@@ -87,8 +110,8 @@ connection.onHover((params): Hover | null => {
   const lines = content.split("\n");
   const line = lines[params.position.line] || "";
 
-  analyzer = new SchemaAnalyzer(content);
-  hoverProvider = new HoverProvider(analyzer);
+  analyzer = new SchemaAnalyzer(content, schemaIndex);
+  hoverProvider = new HoverProvider(analyzer, schemaIndex);
 
   return hoverProvider.getHover(line, params.position.character);
 });
@@ -109,7 +132,7 @@ connection.onDocumentFormatting((params): TextEdit[] => {
 // Analyze document and send diagnostics
 function analyzeDocument(document: TextDocument): void {
   const content = document.getText();
-  analyzer = new SchemaAnalyzer(content);
+  analyzer = new SchemaAnalyzer(content, schemaIndex);
   diagnosticsProvider = new DiagnosticsProvider(analyzer);
 
   const diagnostics = diagnosticsProvider.getDiagnostics(content);

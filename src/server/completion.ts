@@ -1,13 +1,16 @@
 import { CompletionItem, CompletionItemKind, InsertTextFormat } from "vscode-languageserver";
 import { SchemaAnalyzer } from "./analyzer";
-import { JADE_TYPES, getTypeNames } from "../schema/types";
+import { SchemaIndex } from "./schema-index";
+import { JADE_TYPES } from "../schema/types";
 import { JADE_MODIFIERS, SHORTHAND_MODIFIERS } from "../schema/modifiers";
 
 export class CompletionProvider {
   private analyzer: SchemaAnalyzer;
+  private schemaIndex: SchemaIndex;
 
-  constructor(analyzer: SchemaAnalyzer) {
+  constructor(analyzer: SchemaAnalyzer, schemaIndex: SchemaIndex) {
     this.analyzer = analyzer;
+    this.schemaIndex = schemaIndex;
   }
 
   getCompletions(line: string, character: number): CompletionItem[] {
@@ -19,6 +22,8 @@ export class CompletionProvider {
     } else if (this.isAfterType(line, character)) {
       items.push(...this.getModifierCompletions());
     } else if (this.isInForeignKey(line, character)) {
+      items.push(...this.getTableNameCompletions());
+    } else if (this.isInModelReference(line, character)) {
       items.push(...this.getModelNameCompletions());
     } else if (this.isInRelations(line, character)) {
       items.push(...this.getRelationTypeCompletions());
@@ -42,6 +47,12 @@ export class CompletionProvider {
   private isInForeignKey(line: string, character: number): boolean {
     const beforeCursor = line.substring(0, character);
     return /foreignKey\(\s*["']/.test(beforeCursor);
+  }
+
+  private isInModelReference(line: string, character: number): boolean {
+    const beforeCursor = line.substring(0, character);
+    // Check for model = "|" or model = "|"
+    return /model\s*=\s*["']$/.test(beforeCursor);
   }
 
   private isInRelations(line: string, character: number): boolean {
@@ -109,13 +120,23 @@ export class CompletionProvider {
   }
 
   private getModelNameCompletions(): CompletionItem[] {
-    const models = this.analyzer.getAllModels();
+    const models = this.schemaIndex.getAllModels();
 
     return models.map(model => ({
       label: model.name,
       kind: CompletionItemKind.Enum,
       detail: `Model ${model.name}`,
       documentation: model.table ? `Table: ${model.table}` : undefined
+    }));
+  }
+
+  private getTableNameCompletions(): CompletionItem[] {
+    const tables = this.schemaIndex.getTableNames();
+
+    return tables.map(table => ({
+      label: table,
+      kind: CompletionItemKind.Enum,
+      detail: `Table: ${table}`
     }));
   }
 

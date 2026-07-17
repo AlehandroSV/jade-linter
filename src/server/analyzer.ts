@@ -1,6 +1,7 @@
 import { SchemaParser, ParsedSchema, SchemaModel, SchemaField, SchemaError } from "./parser";
 import { getTypeByName } from "../schema/types";
 import { getModifierByName } from "../schema/modifiers";
+import { SchemaIndex } from "./schema-index";
 
 export interface AnalysisResult {
   schema: ParsedSchema;
@@ -9,18 +10,23 @@ export interface AnalysisResult {
 
 export class SchemaAnalyzer {
   private parser: SchemaParser;
+  private schemaIndex: SchemaIndex;
 
-  constructor(content: string) {
+  constructor(content: string, schemaIndex?: SchemaIndex) {
     this.parser = new SchemaParser(content);
+    this.schemaIndex = schemaIndex || new SchemaIndex();
   }
 
   analyze(): AnalysisResult {
     const schema = this.parser.parse();
     const diagnostics: SchemaError[] = [...schema.errors];
 
+    // Get all models from index for cross-reference
+    const allModels = this.schemaIndex.getAllModels();
+
     // Validate each model
     for (const model of schema.models) {
-      this.validateModel(model, schema, diagnostics);
+      this.validateModel(model, schema, diagnostics, allModels);
     }
 
     return { schema, diagnostics };
@@ -29,7 +35,8 @@ export class SchemaAnalyzer {
   private validateModel(
     model: SchemaModel,
     schema: ParsedSchema,
-    diagnostics: SchemaError[]
+    diagnostics: SchemaError[],
+    allModels: SchemaModel[]
   ): void {
     // Validate fields
     for (const field of model.fields) {
@@ -38,7 +45,7 @@ export class SchemaAnalyzer {
 
     // Validate relations
     for (const relation of model.relations) {
-      this.validateRelation(relation, model, schema, diagnostics);
+      this.validateRelation(relation, model, schema, diagnostics, allModels);
     }
   }
 
@@ -107,16 +114,19 @@ export class SchemaAnalyzer {
   }
 
   private validateRelation(
-    relation: SchemaRelation,
+    relation: { type: string; model: string; line: number; character: number },
     model: SchemaModel,
     schema: ParsedSchema,
-    diagnostics: SchemaError[]
+    diagnostics: SchemaError[],
+    allModels: SchemaModel[]
   ): void {
-    // Check if referenced model exists
-    const referencedModel = schema.models.find(m => m.name === relation.model);
-    if (!referencedModel) {
+    // Check if referenced model exists (in current schema OR in index)
+    const referencedInCurrent = schema.models.find(m => m.name === relation.model);
+    const referencedInIndex = allModels.find(m => m.name === relation.model);
+
+    if (!referencedInCurrent && !referencedInIndex) {
       diagnostics.push({
-        message: `Model '${relation.model}' não existe`,
+        message: `Model '${relation.model}' não existe. Models disponíveis: ${allModels.map(m => m.name).join(", ")}`,
         line: relation.line,
         character: relation.character,
         severity: "error"
@@ -144,22 +154,38 @@ export class SchemaAnalyzer {
   }
 
   findModelByName(name: string): SchemaModel | undefined {
-    return this.parser.findModelByName(name);
+    // First check current schema
+    const currentModel = this.parser.findModelByName(name);
+    if (currentModel) {
+      return currentModel;
+    }
+    // Then check index
+    return this.schemaIndex.getModelByName(name);
   }
 
   findModelByTable(table: string): SchemaModel | undefined {
-    return this.parser.findModelByTable(table);
+    // First check current schema
+    const currentModel = this.parser.findModelByTable(table);
+    if (currentModel) {
+      return currentModel;
+    }
+    // Then check index
+    return this.schemaIndex.getModelByTable(table);
   }
 
   getAllModels(): SchemaModel[] {
-    return this.parser.parse().models;
-  }
-}
+    const currentModels = this.parser.parse().models;
+    const indexModels = this.schemaIndex.getAllModels();
 
-interface SchemaRelation {
-  type: string;
-  model: string;
-  foreignKey?: string;
-  line: number;
-  character: number;
+    // Merge, preferring current schema
+    const merged = new Map<string, SchemaModel>();
+    for (const model of indexModels) {
+      merged.set(model.name, model);
+    }
+    for (const model of currentModels) {
+      merged.set(model.name, model);
+    }
+
+    return Array.from(merged.values());
+  }
 }

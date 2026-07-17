@@ -1,13 +1,16 @@
 import { Hover, MarkupContent, MarkupKind } from "vscode-languageserver";
 import { SchemaAnalyzer } from "./analyzer";
+import { SchemaIndex } from "./schema-index";
 import { getTypeByName } from "../schema/types";
 import { getModifierByName, SHORTHAND_MODIFIERS } from "../schema/modifiers";
 
 export class HoverProvider {
   private analyzer: SchemaAnalyzer;
+  private schemaIndex: SchemaIndex;
 
-  constructor(analyzer: SchemaAnalyzer) {
+  constructor(analyzer: SchemaAnalyzer, schemaIndex: SchemaIndex) {
     this.analyzer = analyzer;
+    this.schemaIndex = schemaIndex;
   }
 
   getHover(line: string, character: number): Hover | null {
@@ -32,6 +35,12 @@ export class HoverProvider {
     const shorthand = SHORTHAND_MODIFIERS.find(s => s.symbol === word);
     if (shorthand) {
       return this.createShorthandHover(shorthand);
+    }
+
+    // Check if it's a model name
+    const model = this.schemaIndex.getModelByName(word);
+    if (model) {
+      return this.createModelHover(model);
     }
 
     return null;
@@ -118,6 +127,38 @@ export class HoverProvider {
         "",
         "Expands to:",
         ...shorthand.expandsTo.map(e => `- \`${e}\``)
+      ].join("\n")
+    };
+
+    return { contents: content };
+  }
+
+  private createModelHover(model: {
+    name: string;
+    table?: string;
+    fields: Array<{ name: string; type: string }>;
+    relations: Array<{ type: string; model: string }>;
+  }): Hover {
+    const fields = model.fields
+      .map(f => `- \`${f.name}\`: ${f.type}`)
+      .join("\n");
+
+    const relations = model.relations
+      .map(r => `- ${r.type} → ${r.model}`)
+      .join("\n");
+
+    const content: MarkupContent = {
+      kind: MarkupKind.Markdown,
+      value: [
+        `**Model ${model.name}**`,
+        "",
+        model.table ? `Table: \`${model.table}\`` : "",
+        "",
+        "Fields:",
+        fields || "- (none)",
+        "",
+        "Relations:",
+        relations || "- (none)"
       ].join("\n")
     };
 
