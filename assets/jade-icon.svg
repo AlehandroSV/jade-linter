@@ -95,7 +95,7 @@
   <text x="256" y="285" 
         font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
         font-size="150" 
-        font-weight="300"
+        font-weight="900"
         fill="#ffffff" 
         text-anchor="middle"
         opacity="0.95"
