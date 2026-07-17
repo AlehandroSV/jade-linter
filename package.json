@@ -1,5 +1,5 @@
 {
-  "name": "jade",
+  "name": "jade-schema-linter",
   "displayName": "Jade",
   "description": "Linter and IDE support for Jade ORM schema files",
   "version": "0.1.0",
