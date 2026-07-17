@@ -92,9 +92,9 @@
   <circle cx="180" cy="280" r="2" fill="#ffffff" opacity="0.6"/>
 
   <!-- Letter J - clean and modern -->
-  <text x="256" y="268" 
+  <text x="256" y="285" 
         font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
-        font-size="100" 
+        font-size="150" 
         font-weight="300"
         fill="#ffffff" 
         text-anchor="middle"
