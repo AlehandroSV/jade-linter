@@ -65,6 +65,21 @@ export const JADE_TYPES: JadeType[] = [
     description: "DECIMAL column",
     sqlType: "DECIMAL",
     hasPrecision: true
+  },
+  {
+    name: "BigInt",
+    description: "BIGINT column for large integers",
+    sqlType: "BIGINT"
+  },
+  {
+    name: "JSON",
+    description: "JSON/JSONB column for structured data",
+    sqlType: "JSONB"
+  },
+  {
+    name: "Enum",
+    description: "Enum column with restricted values",
+    sqlType: "TEXT"
   }
 ];
 

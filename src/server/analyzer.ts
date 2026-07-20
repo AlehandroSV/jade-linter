@@ -59,10 +59,11 @@ export class SchemaAnalyzer {
     const type = getTypeByName(field.type);
     if (!type) {
       diagnostics.push({
-        message: `Tipo '${field.type}' não existe. Tipos válidos: Integer, String, Text, Boolean, Timestamp, Date, UUID, CUID, NanoID, Float, Decimal`,
+        message: `Tipo '${field.type}' não existe. Tipos válidos: Integer, String, Text, Boolean, Timestamp, Date, UUID, CUID, NanoID, Float, Decimal, BigInt, JSON, Enum`,
         line: field.line,
         character: field.character,
-        severity: "error"
+        severity: "error",
+        length: field.type.length
       });
       return;
     }
@@ -85,7 +86,8 @@ export class SchemaAnalyzer {
           message: `Modificador '${modifier}' não existe`,
           line: field.line,
           character: field.character,
-          severity: "error"
+          severity: "error",
+          length: modifier.length
         });
       }
     }
@@ -102,7 +104,7 @@ export class SchemaAnalyzer {
 
     // Warning: created_at without defaultNow
     if (field.name === "created_at" && field.type === "Timestamp") {
-      if (!field.modifiers.includes("default")) {
+      if (!field.modifiers.includes("default") && !field.modifiers.includes("defaultNow")) {
         diagnostics.push({
           message: "Campo 'created_at' deveria ter defaultNow()",
           line: field.line,
@@ -129,18 +131,20 @@ export class SchemaAnalyzer {
         message: `Model '${relation.model}' não existe. Models disponíveis: ${allModels.map(m => m.name).join(", ")}`,
         line: relation.line,
         character: relation.character,
-        severity: "error"
+        severity: "error",
+        length: relation.model.length
       });
     }
 
     // Check relation type
-    const validRelationTypes = ["belongsTo", "hasMany", "hasOne", "hasAndBelongsToMany"];
+    const validRelationTypes = ["belongsTo", "hasMany", "hasOne", "hasAndBelongsToMany", "hasManyThrough"];
     if (!validRelationTypes.includes(relation.type)) {
       diagnostics.push({
-        message: `Tipo de relation '${relation.type}' não existe. Tipos válidos: belongsTo, hasMany, hasOne, hasAndBelongsToMany`,
+        message: `Tipo de relation '${relation.type}' não existe. Tipos válidos: belongsTo, hasMany, hasOne, hasAndBelongsToMany, hasManyThrough`,
         line: relation.line,
         character: relation.character,
-        severity: "error"
+        severity: "error",
+        length: relation.type.length
       });
     }
   }

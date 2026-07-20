@@ -27,6 +27,7 @@ export interface SchemaModel {
 export interface ParsedSchema {
   models: SchemaModel[];
   errors: SchemaError[];
+  isJadeFile: boolean;
 }
 
 export interface SchemaError {
@@ -34,6 +35,7 @@ export interface SchemaError {
   line: number;
   character: number;
   severity: "error" | "warning" | "information";
+  length?: number;
 }
 
 export class SchemaParser {
@@ -41,6 +43,9 @@ export class SchemaParser {
   private lines: string[];
   private models: SchemaModel[] = [];
   private errors: SchemaError[] = [];
+  private braceDepth: number = 0;
+  private currentModel: SchemaModel | null = null;
+  private isJadeFile: boolean = false;
 
   constructor(content: string) {
     this.content = content;
@@ -50,6 +55,9 @@ export class SchemaParser {
   parse(): ParsedSchema {
     this.models = [];
     this.errors = [];
+    this.braceDepth = 0;
+    this.currentModel = null;
+    this.isJadeFile = false;
 
     for (let i = 0; i < this.lines.length; i++) {
       const line = this.lines[i];
@@ -58,7 +66,8 @@ export class SchemaParser {
 
     return {
       models: this.models,
-      errors: this.errors
+      errors: this.errors,
+      isJadeFile: this.isJadeFile
     };
   }
 
@@ -67,6 +76,46 @@ export class SchemaParser {
 
     // Skip empty lines and comments
     if (!trimmed || trimmed.startsWith("--")) {
+      return;
+    }
+
+    // Detect require("jade") to identify Jade files
+    if (/require\s*\(\s*["']jade["']\s*\)/.test(trimmed) ||
+        /require\s*\(\s*["']jade\.init["']\s*\)/.test(trimmed)) {
+      this.isJadeFile = true;
+    }
+
+    // Track brace depth for model scope closing
+    for (const ch of trimmed) {
+      if (ch === '{') this.braceDepth++;
+      if (ch === '}') {
+        this.braceDepth--;
+        // Close model scope when we return to depth 0 or below
+        if (this.braceDepth <= 0 && this.currentModel) {
+          this.currentModel = null;
+          this.braceDepth = 0;
+        }
+      }
+    }
+
+    // Detect Entity("table_name", { ... }) pattern
+    const entityMatch = trimmed.match(/Entity\s*\(\s*["'](\w+)["']\s*,\s*\{/);
+    if (entityMatch) {
+      const tableName = entityMatch[1];
+      // Derive model name from table name (singularize roughly)
+      const modelName = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace(/s$/, '');
+      const model: SchemaModel = {
+        name: modelName,
+        table: tableName,
+        fields: [],
+        relations: [],
+        line: lineIndex,
+        character: line.indexOf("Entity")
+      };
+      this.models.push(model);
+      this.currentModel = model;
+      // Reset brace depth relative to this Entity block
+      this.braceDepth = 1;
       return;
     }
 
@@ -82,17 +131,17 @@ export class SchemaParser {
         character: line.indexOf(modelName)
       };
       this.models.push(model);
+      this.currentModel = model;
+      this.braceDepth = 1;
       return;
     }
 
-    // Detect field definition in current model
-    if (this.models.length > 0) {
-      const currentModel = this.models[this.models.length - 1];
-
+    // Detect field/relation definition in current model
+    if (this.currentModel) {
       // Detect table assignment
       const tableMatch = trimmed.match(/^table\s*=\s*["'](\w+)["']/);
       if (tableMatch) {
-        currentModel.table = tableMatch[1];
+        this.currentModel.table = tableMatch[1];
         return;
       }
 
@@ -113,7 +162,7 @@ export class SchemaParser {
           character: line.indexOf(fieldName)
         };
 
-        currentModel.fields.push(field);
+        this.currentModel.fields.push(field);
         return;
       }
 
@@ -126,7 +175,7 @@ export class SchemaParser {
           line: lineIndex,
           character: line.indexOf("{")
         };
-        currentModel.relations.push(relation);
+        this.currentModel.relations.push(relation);
         return;
       }
     }

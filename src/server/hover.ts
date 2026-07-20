@@ -8,6 +8,14 @@ export class HoverProvider {
   private analyzer: SchemaAnalyzer;
   private schemaIndex: SchemaIndex;
 
+  private static RELATION_TYPES: Record<string, string> = {
+    belongsTo: "Defines a foreign key reference to another model. The foreign key is stored on this model's table.",
+    hasMany: "Defines a one-to-many relationship. The foreign key is stored on the target model's table.",
+    hasOne: "Defines a one-to-one relationship. The foreign key is stored on the target model's table.",
+    hasAndBelongsToMany: "Defines a many-to-many relationship via a pivot/join table.",
+    hasManyThrough: "Defines a many-to-many relationship through an intermediate model.",
+  };
+
   constructor(analyzer: SchemaAnalyzer, schemaIndex: SchemaIndex) {
     this.analyzer = analyzer;
     this.schemaIndex = schemaIndex;
@@ -41,6 +49,12 @@ export class HoverProvider {
     const model = this.schemaIndex.getModelByName(word);
     if (model) {
       return this.createModelHover(model);
+    }
+
+    // Check if it's a relation type
+    const relationDesc = HoverProvider.RELATION_TYPES[word];
+    if (relationDesc) {
+      return this.createRelationTypeHover(word, relationDesc);
     }
 
     return null;
@@ -159,6 +173,19 @@ export class HoverProvider {
         "",
         "Relations:",
         relations || "- (none)"
+      ].join("\n")
+    };
+
+    return { contents: content };
+  }
+
+  private createRelationTypeHover(name: string, description: string): Hover {
+    const content: MarkupContent = {
+      kind: MarkupKind.Markdown,
+      value: [
+        `**${name}**`,
+        "",
+        description
       ].join("\n")
     };
 

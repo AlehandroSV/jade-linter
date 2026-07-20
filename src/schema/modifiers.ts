@@ -52,6 +52,16 @@ export const JADE_MODIFIERS: JadeModifier[] = [
     hasParams: true,
     paramCount: 1,
     paramNames: ["values"]
+  },
+  {
+    name: "defaultNow",
+    description: "Set default to current timestamp",
+    hasParams: false
+  },
+  {
+    name: "encrypted",
+    description: "Mark column for encryption (XOR+base64)",
+    hasParams: false
   }
 ];
 

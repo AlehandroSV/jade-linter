@@ -20,10 +20,12 @@ export class DiagnosticsProvider {
     line: number;
     character: number;
     severity: "error" | "warning" | "information";
+    length?: number;
   }): Diagnostic {
+    const tokenLength = error.length || 10;
     const range: Range = {
       start: Position.create(error.line, error.character),
-      end: Position.create(error.line, error.character + 10)
+      end: Position.create(error.line, error.character + tokenLength)
     };
 
     let severity: DiagnosticSeverity;

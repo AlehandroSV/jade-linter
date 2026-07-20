@@ -141,7 +141,7 @@ export class CompletionProvider {
   }
 
   private getRelationTypeCompletions(): CompletionItem[] {
-    const relationTypes = ["belongsTo", "hasMany", "hasOne", "hasAndBelongsToMany"];
+    const relationTypes = ["belongsTo", "hasMany", "hasOne", "hasAndBelongsToMany", "hasManyThrough"];
 
     return relationTypes.map(type => ({
       label: type,
@@ -175,6 +175,26 @@ export class CompletionProvider {
       detail: "Jade Entity definition",
       insertText: 'Entity("${1:table_name}", {\n\t${2:id} = jade.Integer():primaryKey(),\n})',
       insertTextFormat: InsertTextFormat.Snippet
+    });
+
+    // Add Jade modules
+    const modules = [
+      { name: "SoftDelete", detail: "Soft delete setup — jade.SoftDelete.setup(entity)" },
+      { name: "Audit", detail: "Audit trail — jade.Audit.setup(entity)" },
+      { name: "Encryption", detail: "Column encryption — jade.Encryption.configure({...})" },
+      { name: "Events", detail: "Event system — jade.Events.define(entity, names)" },
+      { name: "cache", detail: "Query caching — jade.cache.get/set/delete" },
+      { name: "database", detail: "Multi-database — jade.database.configure({...})" },
+      { name: "test", detail: "Test helpers — jade.test.setup(jade)" },
+      { name: "Seed", detail: "Seed system — jade.Seed.register(name, path)" },
+    ];
+
+    modules.forEach(mod => {
+      items.push({
+        label: mod.name,
+        kind: CompletionItemKind.Module,
+        detail: mod.detail
+      });
     });
 
     return items;
