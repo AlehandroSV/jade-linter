@@ -2,7 +2,7 @@
   "name": "jade-linter",
   "displayName": "Jade Linter",
   "description": "Linter and IDE support for Jade ORM schema files",
-  "version": "0.1.1",
+  "version": "0.0.0",
   "publisher": "AlehandroSV",
   "icon": "assets/jade-icon.png",
   "repository": {
