@@ -60,7 +60,7 @@ export const JADE_MODIFIERS: JadeModifier[] = [
   },
   {
     name: "encrypted",
-    description: "Mark column for encryption (XOR+base64)",
+    description: "Mark column for encryption",
     hasParams: false
   }
 ];
