@@ -16,6 +16,21 @@ export class HoverProvider {
     hasManyThrough: "Defines a many-to-many relationship through an intermediate model.",
   };
 
+  private static NESTED_KEYWORDS: Record<string, { desc: string; example: string }> = {
+    connect: {
+      desc: "Reference an existing record by unique field.",
+      example: "{ connect = { id = 1 } }\n{ connect = { email = \"user@example.com\" } }",
+    },
+    create: {
+      desc: "Create a new related record inline.",
+      example: "{ create = { name = \"Alice\", email = \"alice@example.com\" } }",
+    },
+    connectOrCreate: {
+      desc: "Find an existing record or create it if not found.",
+      example: "{ connectOrCreate = {\n  where = { email = \"alice@example.com\" },\n  create = { name = \"Alice\", email = \"alice@example.com\" }\n} }",
+    },
+  };
+
   constructor(analyzer: SchemaAnalyzer, schemaIndex: SchemaIndex) {
     this.analyzer = analyzer;
     this.schemaIndex = schemaIndex;
@@ -55,6 +70,12 @@ export class HoverProvider {
     const relationDesc = HoverProvider.RELATION_TYPES[word];
     if (relationDesc) {
       return this.createRelationTypeHover(word, relationDesc);
+    }
+
+    // Check if it's a nested relation keyword (connect, create, connectOrCreate)
+    const nestedInfo = HoverProvider.NESTED_KEYWORDS[word];
+    if (nestedInfo) {
+      return this.createNestedKeywordHover(word, nestedInfo.desc, nestedInfo.example);
     }
 
     // Check if it's an FK field (ends with _id) — show inferred relation
@@ -202,6 +223,23 @@ export class HoverProvider {
       ].join("\n")
     };
 
+    return { contents: content };
+  }
+
+  private createNestedKeywordHover(keyword: string, description: string, example: string): Hover {
+    const content: MarkupContent = {
+      kind: MarkupKind.Markdown,
+      value: [
+        `**${keyword}**`,
+        "",
+        description,
+        "",
+        "Example:",
+        "```lua",
+        example,
+        "```",
+      ].join("\n"),
+    };
     return { contents: content };
   }
 
