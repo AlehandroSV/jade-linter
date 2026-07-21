@@ -1,16 +1,17 @@
 import { Diagnostic, DiagnosticSeverity, Range, Position } from "vscode-languageserver";
 import { SchemaAnalyzer, AnalysisResult } from "./analyzer";
+import { SchemaIndex } from "./schema-index";
 
 export class DiagnosticsProvider {
-  private analyzer: SchemaAnalyzer;
+  private schemaIndex: SchemaIndex;
 
-  constructor(analyzer: SchemaAnalyzer) {
-    this.analyzer = analyzer;
+  constructor(schemaIndex: SchemaIndex) {
+    this.schemaIndex = schemaIndex;
   }
 
   getDiagnostics(content: string): Diagnostic[] {
-    this.analyzer = new SchemaAnalyzer(content);
-    const result = this.analyzer.analyze();
+    const analyzer = new SchemaAnalyzer(content, this.schemaIndex);
+    const result = analyzer.analyze();
 
     return result.diagnostics.map(error => this.convertToDiagnostic(error));
   }

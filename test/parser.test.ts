@@ -237,4 +237,100 @@ User = {
       expect(field!.model.name).toBe("User");
     });
   });
+
+  describe("Auto-relation detection", () => {
+    it("infers belongsTo from :foreignKey() modifier", () => {
+      const parser = new SchemaParser(`
+User = {
+  id = jade.Integer():primaryKey()
+}
+Post = {
+  id = jade.Integer():primaryKey()
+  user_id = jade.Integer():foreignKey("users", "id")
+}
+`);
+      const result = parser.parse();
+      const post = result.models.find(m => m.name === "Post")!;
+      expect(post.relations).toHaveLength(1);
+      expect(post.relations[0].type).toBe("belongsTo");
+      expect(post.relations[0].model).toBe("User");
+      expect(post.relations[0].foreignKey).toBe("user_id");
+      expect(post.relations[0].inferred).toBe(true);
+    });
+
+    it("infers belongsTo from _id convention when target table exists", () => {
+      const parser = new SchemaParser(`
+User = {
+  id = jade.Integer():primaryKey()
+}
+Post = {
+  id = jade.Integer():primaryKey()
+  user_id = jade.Integer():notNull()
+}
+`);
+      const result = parser.parse();
+      const post = result.models.find(m => m.name === "Post")!;
+      expect(post.relations).toHaveLength(1);
+      expect(post.relations[0].type).toBe("belongsTo");
+      expect(post.relations[0].model).toBe("User");
+      expect(post.relations[0].foreignKey).toBe("user_id");
+      expect(post.relations[0].inferred).toBe(true);
+    });
+
+    it("does not infer when _id field but target table missing", () => {
+      const parser = new SchemaParser(`
+Post = {
+  id = jade.Integer():primaryKey()
+  author_id = jade.Integer()
+}
+`);
+      const result = parser.parse();
+      const post = result.models.find(m => m.name === "Post")!;
+      expect(post.relations).toHaveLength(0);
+    });
+
+    it("does not duplicate when explicit and inferred both exist", () => {
+      const parser = new SchemaParser(`
+User = {
+  id = jade.Integer():primaryKey()
+}
+Post = {
+  id = jade.Integer():primaryKey()
+  user_id = jade.Integer():foreignKey("users", "id")
+}
+`);
+      const result = parser.parse();
+      const post = result.models.find(m => m.name === "Post")!;
+      // Should have exactly 1 relation (belongsTo inferred from :foreignKey)
+      expect(post.relations).toHaveLength(1);
+    });
+
+    it("captures foreignKey args in field", () => {
+      const parser = new SchemaParser(`
+Post = {
+  user_id = jade.Integer():foreignKey("users", "id")
+}
+`);
+      const result = parser.parse();
+      const post = result.models[0];
+      expect(post.fields[0].foreignKey).toEqual({ table: "users", column: "id" });
+    });
+
+    it("infers belongsTo from Entity pattern with _id convention", () => {
+      const parser = new SchemaParser(`
+local User = Entity("users", {
+  id = jade.Integer():primaryKey()
+})
+local Post = Entity("posts", {
+  id = jade.Integer():primaryKey()
+  user_id = jade.Integer():notNull()
+})
+`);
+      const result = parser.parse();
+      const post = result.models.find(m => m.table === "posts")!;
+      expect(post.relations).toHaveLength(1);
+      expect(post.relations[0].type).toBe("belongsTo");
+      expect(post.relations[0].model).toBe("User");
+    });
+  });
 });

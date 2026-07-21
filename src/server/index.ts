@@ -132,8 +132,7 @@ connection.onDocumentFormatting((params): TextEdit[] => {
 // Analyze document and send diagnostics
 function analyzeDocument(document: TextDocument): void {
   const content = document.getText();
-  analyzer = new SchemaAnalyzer(content, schemaIndex);
-  diagnosticsProvider = new DiagnosticsProvider(analyzer);
+  diagnosticsProvider = new DiagnosticsProvider(schemaIndex);
 
   const diagnostics = diagnosticsProvider.getDiagnostics(content);
   connection.sendDiagnostics({ uri: document.uri, diagnostics });

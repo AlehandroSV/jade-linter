@@ -3,6 +3,7 @@ export interface SchemaField {
   type: string;
   length?: number;
   modifiers: string[];
+  foreignKey?: { table: string; column: string };
   line: number;
   character: number;
 }
@@ -11,6 +12,7 @@ export interface SchemaRelation {
   type: string;
   model: string;
   foreignKey?: string;
+  inferred?: boolean;
   line: number;
   character: number;
 }
@@ -38,6 +40,25 @@ export interface SchemaError {
   length?: number;
 }
 
+function singularize(word: string): string {
+  if (word.endsWith("ies")) return word.slice(0, -3) + "y";
+  if (word.endsWith("ses") || word.endsWith("xes") || word.endsWith("zes"))
+    return word.slice(0, -2);
+  if (word.endsWith("s") && !word.endsWith("ss"))
+    return word.slice(0, -1);
+  return word;
+}
+
+function pluralize(word: string): string {
+  if (word.endsWith("y") && !/[aeiou]y$/.test(word))
+    return word.slice(0, -1) + "ies";
+  if (word.endsWith("s") || word.endsWith("x") || word.endsWith("z"))
+    return word + "es";
+  return word + "s";
+}
+
+const FK_TYPES = ["Integer", "BigInt", "UUID", "CUID", "NanoID"];
+
 export class SchemaParser {
   private content: string;
   private lines: string[];
@@ -63,6 +84,9 @@ export class SchemaParser {
       const line = this.lines[i];
       this.parseLine(line, i);
     }
+
+    // Post-process: detect _id convention for FK inference
+    this.detectForeignKeyCandidates();
 
     return {
       models: this.models,
@@ -103,7 +127,7 @@ export class SchemaParser {
     if (entityMatch) {
       const tableName = entityMatch[1];
       // Derive model name from table name (singularize roughly)
-      const modelName = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace(/s$/, '');
+      const modelName = singularize(tableName).charAt(0).toUpperCase() + singularize(tableName).slice(1);
       const model: SchemaModel = {
         name: modelName,
         table: tableName,
@@ -151,18 +175,43 @@ export class SchemaParser {
         const fieldName = fieldMatch[1];
         const fieldType = fieldMatch[2];
         const fieldArgs = fieldMatch[3];
-        const modifiers = this.parseModifiers(fieldMatch[4]);
+        const modifierText = fieldMatch[4];
+        const { modifiers, foreignKey } = this.parseModifiers(modifierText);
 
         const field: SchemaField = {
           name: fieldName,
           type: fieldType,
           length: fieldArgs ? parseInt(fieldArgs) : undefined,
           modifiers,
+          foreignKey,
           line: lineIndex,
           character: line.indexOf(fieldName)
         };
 
         this.currentModel.fields.push(field);
+
+        // Auto-infer belongsTo from explicit :foreignKey()
+        if (field.foreignKey) {
+          const targetTable = field.foreignKey.table;
+          const targetName = singularize(targetTable);
+          const modelName = targetName.charAt(0).toUpperCase() + targetName.slice(1);
+
+          // Avoid duplicate relations
+          const exists = this.currentModel.relations.some(
+            r => r.type === "belongsTo" && r.foreignKey === field.name
+          );
+          if (!exists) {
+            this.currentModel.relations.push({
+              type: "belongsTo",
+              model: modelName,
+              foreignKey: field.name,
+              inferred: true,
+              line: lineIndex,
+              character: field.character,
+            });
+          }
+        }
+
         return;
       }
 
@@ -181,14 +230,24 @@ export class SchemaParser {
     }
   }
 
-  private parseModifiers(text: string): string[] {
+  private parseModifiers(text: string): { modifiers: string[]; foreignKey?: { table: string; column: string } } {
     const modifiers: string[] = [];
+    let foreignKey: { table: string; column: string } | undefined;
+
+    // Match :foreignKey("table", "column") specifically
+    const fkMatch = text.match(/:foreignKey\s*\(\s*["'](\w+)["']\s*,\s*["'](\w+)["']\s*\)/);
+    if (fkMatch) {
+      foreignKey = { table: fkMatch[1], column: fkMatch[2] };
+      modifiers.push("foreignKey");
+    }
 
     // Match :modifier() patterns
     const modifierRegex = /:(\w+)\s*\([^)]*\)/g;
     let match;
     while ((match = modifierRegex.exec(text)) !== null) {
-      modifiers.push(match[1]);
+      if (!modifiers.includes(match[1])) {
+        modifiers.push(match[1]);
+      }
     }
 
     // Match shorthand modifiers
@@ -200,7 +259,49 @@ export class SchemaParser {
       modifiers.push("nullable");
     }
 
-    return modifiers;
+    return { modifiers, foreignKey };
+  }
+
+  /**
+   * Detect fields ending in _id that reference existing tables.
+   * Called after all lines are parsed.
+   */
+  private detectForeignKeyCandidates(): void {
+    for (const model of this.models) {
+      for (const field of model.fields) {
+        // Skip if already has explicit :foreignKey
+        if (field.foreignKey) continue;
+        // Must end with _id
+        if (!field.name.endsWith("_id")) continue;
+        // Must be a FK-compatible type
+        if (!FK_TYPES.includes(field.type)) continue;
+
+        // Infer table: "user_id" -> "users" or model "User"
+        const base = field.name.slice(0, -3);
+        const tableName = pluralize(base);
+        const modelName = base.charAt(0).toUpperCase() + base.slice(1);
+
+        // Check if target exists by table name or model name
+        const targetModel = this.models.find(m => m.table === tableName)
+          || this.models.find(m => m.name === modelName);
+        if (!targetModel) continue;
+
+        // Avoid duplicate relations
+        const exists = model.relations.some(
+          r => r.type === "belongsTo" && r.foreignKey === field.name
+        );
+        if (exists) continue;
+
+        model.relations.push({
+          type: "belongsTo",
+          model: targetModel.name,
+          foreignKey: field.name,
+          inferred: true,
+          line: field.line,
+          character: field.character,
+        });
+      }
+    }
   }
 
   getModelAtLine(line: number): SchemaModel | undefined {

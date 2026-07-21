@@ -57,6 +57,19 @@ export class HoverProvider {
       return this.createRelationTypeHover(word, relationDesc);
     }
 
+    // Check if it's an FK field (ends with _id) — show inferred relation
+    if (word.endsWith("_id") && line.includes("jade.Integer")) {
+      const base = word.slice(0, -3);
+      const tableName = base + "s";
+      const targetModel = this.schemaIndex.getModelByName(
+        base.charAt(0).toUpperCase() + base.slice(1)
+      ) || this.schemaIndex.getModelByTable(tableName);
+
+      if (targetModel) {
+        return this.createFKHover(word, targetModel.name);
+      }
+    }
+
     return null;
   }
 
@@ -186,6 +199,21 @@ export class HoverProvider {
         `**${name}**`,
         "",
         description
+      ].join("\n")
+    };
+
+    return { contents: content };
+  }
+
+  private createFKHover(fieldName: string, targetModel: string): Hover {
+    const content: MarkupContent = {
+      kind: MarkupKind.Markdown,
+      value: [
+        `**${fieldName}** (ForeignKey)`,
+        "",
+        `Infers: \`belongsTo\` → **${targetModel}**`,
+        "",
+        `Add \`jade.Entity("${targetModel.toLowerCase()}s", ...)\` to define the target entity.`
       ].join("\n")
     };
 

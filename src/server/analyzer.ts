@@ -116,7 +116,7 @@ export class SchemaAnalyzer {
   }
 
   private validateRelation(
-    relation: { type: string; model: string; line: number; character: number },
+    relation: { type: string; model: string; foreignKey?: string; inferred?: boolean; line: number; character: number },
     model: SchemaModel,
     schema: ParsedSchema,
     diagnostics: SchemaError[],
@@ -145,6 +145,17 @@ export class SchemaAnalyzer {
         character: relation.character,
         severity: "error",
         length: relation.type.length
+      });
+    }
+
+    // Info: inferred relation
+    if (relation.inferred) {
+      diagnostics.push({
+        message: `Relação '${relation.type}' inferida via '${relation.foreignKey}' → ${relation.model}`,
+        line: relation.line,
+        character: relation.character,
+        severity: "information",
+        length: (relation.foreignKey || "").length
       });
     }
   }
